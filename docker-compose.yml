@@ -1,7 +1,7 @@
 version: '2'
 
 services:
-    cfsd-recorder:
+    cfsd-cognition-acceleration:
         image: lowitz/cfsd-cognition-acceleration:v0.0.0
         network_mode: "host"
         command: "acceleration --cid=219 --freq=2"
