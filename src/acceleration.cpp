@@ -39,7 +39,7 @@ int32_t main(int32_t argc, char **argv) {
 
         Acceleration acceleration(od4);
 
-        auto onSwitchStateReading{[&acceleration, &VERBOSE](cluon::data::Envelope &&envelope)
+        auto onSwitchStateReading{[&acceleration, VERBOSE](cluon::data::Envelope &&envelope)
         {
             uint16_t senderStamp = envelope.senderStamp();
             if (senderStamp == 1401) {
@@ -52,11 +52,29 @@ int32_t main(int32_t argc, char **argv) {
         }};
         od4.dataTrigger(opendlv::proxy::SwitchStateReading::ID(), onSwitchStateReading);
 
-        //TODO: Add all sensor readings needed here
+        //TODO: Should we use wheelSpeedReadings or filtered groundSpeedReading?
+        auto onWheelSpeedReading{[&acceleration, VERBOSE](cluon::data::Envelope &&envelope)
+        {
+          uint16_t senderStamp = envelope.senderStamp();
+          if (senderStamp == 1904) {
+            auto wheelSpeedReading = cluon::extractMessage<opendlv::proxy::WheelSpeedReading>(std::move(envelope));
+            acceleration.setLeftWheelSpeed(wheelSpeedReading.wheelSpeed());
+            if (VERBOSE) {
+              std::cout << "[LOGIC-ACCELERATION] FL wheel speed reading: " << wheelSpeedReading.wheelSpeed() << std::endl;
+            }
+          } else if (senderStamp == 1903) {
+            auto wheelSpeedReading = cluon::extractMessage<opendlv::proxy::WheelSpeedReading>(std::move(envelope));
+            acceleration.setRightWheelSpeed(wheelSpeedReading.wheelSpeed());
+            if (VERBOSE) {
+              std::cout << "[LOGIC-ACCELERATION] FR wheel speed reading: " << wheelSpeedReading.wheelSpeed() << std::endl;
+            }
+          }
+        }};
+        od4.dataTrigger(opendlv::proxy::WheelSpeedReading::ID(), onWheelSpeedReading);
 
         auto atFrequency{[&acceleration, &VERBOSE]() -> bool
         {
-            acceleration.run();
+            acceleration.step();
             return true;
         }};
 
