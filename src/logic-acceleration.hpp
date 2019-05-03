@@ -35,9 +35,11 @@ class Acceleration {
     ~Acceleration();
 
   public:
-    void run();
+    void step();
 
     void setAsState(asState state);
+    void setLeftWheelSpeed(float speed);
+    void setRightWheelSpeed(float speed);
 
   private:
     void setUp();
@@ -47,6 +49,8 @@ class Acceleration {
   private:
     cluon::OD4Session &m_od4;
     asState m_asState;
+    float m_leftWheelSpeed;
+    float m_rightWheelSpeed;
 
     
 };

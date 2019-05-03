@@ -21,6 +21,8 @@
 Acceleration::Acceleration(cluon::OD4Session &od4)
   : m_od4{od4}
   , m_asState{asState::AS_OFF}
+  , m_leftWheelSpeed{0.0f}
+  , m_rightWheelSpeed{0.0f}
 {
   setUp();
 }
@@ -38,16 +40,29 @@ void Acceleration::tearDown()
 {
 }
 
-void Acceleration::run()
+void Acceleration::step()
 {
   cluon::data::TimeStamp sampleTime = cluon::time::now();
 
   opendlv::proxy::TorqueRequest msgTorque;
   msgTorque.torque(10.0f);
-  m_od4.send(msgTorque, sampleTime, 1000);
+  m_od4.send(msgTorque, sampleTime, 1500); // Left
+  m_od4.send(msgTorque, sampleTime, 1501); // Right
 }
+
+
 
 void Acceleration::setAsState(asState state)
 {
   m_asState = state;
+}
+
+void Acceleration::setLeftWheelSpeed(float speed)
+{
+  m_leftWheelSpeed = speed;
+}
+
+void Acceleration::setRightWheelSpeed(float speed)
+{
+  m_rightWheelSpeed = speed;
 }
