@@ -29,7 +29,7 @@ WORKDIR /opt/sources
 RUN rm -rf build && \
     mkdir build && \
     cd build && \
-    cmake -D CMAKE_BUILD_TYPE=Release -D CMAKE_INSTALL_PREFIX=/tmp/acceleration-dest .. && \
+    cmake -D CMAKE_BUILD_TYPE=Release -D CMAKE_INSTALL_PREFIX=/tmp/velocity-dest .. && \
     make && make test && make install
 
 
@@ -37,9 +37,7 @@ RUN rm -rf build && \
 FROM alpine:3.7
 MAINTAINER Love Mowitz "lovem@student.chalmers.se"
 RUN apk update && \
-    apk --no-cache add \
-    openssh \
-    sshpass
+    apk --no-cache add
 WORKDIR /usr/bin
-COPY --from=builder /tmp/acceleration-dest/bin/acceleration .
-CMD ["/usr/bin/acceleration"]
+COPY --from=builder /tmp/velocity-dest/bin/velocity .
+CMD ["/usr/bin/velocity"]

@@ -20,7 +20,6 @@
 
 VelocityControl::VelocityControl(cluon::OD4Session &od4)
   : m_od4{od4}
-  , m_asState{asState::AS_OFF}
   , m_leftWheelSpeed{0.0f}
   , m_rightWheelSpeed{0.0f}
 {

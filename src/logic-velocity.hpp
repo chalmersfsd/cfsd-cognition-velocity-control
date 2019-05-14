@@ -39,7 +39,6 @@ class VelocityControl {
 
   private:
     cluon::OD4Session &m_od4;
-    asState m_asState;
     float m_leftWheelSpeed;
     float m_rightWheelSpeed;
 

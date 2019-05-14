@@ -25,7 +25,7 @@ int32_t main(int32_t argc, char **argv) {
     int32_t retCode{0};
     auto commandlineArguments = cluon::getCommandlineArguments(argc, argv);
     if (0 == commandlineArguments.count("cid") || 0 == commandlineArguments.count("freq")) {
-        std::cerr << argv[0] << "Generates the acceleration requests for Lynx" << std::endl;
+        std::cerr << argv[0] << "Generates the speed requests for Lynx" << std::endl;
         std::cerr << "Usage:   " << argv[0] << " --cid=<OpenDaVINCI session> --freq=<Microservice frequency> [--verbose=<Verbose or not>]"
         << std::endl;
         std::cerr << "Example: " << argv[0] << "--cid=111 --freq=2 [--verbose]" << std::endl;
@@ -37,31 +37,31 @@ int32_t main(int32_t argc, char **argv) {
         float FREQ{static_cast<float>(std::stof(commandlineArguments["freq"]))};
         bool VERBOSE{static_cast<bool>(commandlineArguments.count("verbose"))};
 
-        Acceleration acceleration(od4);
+        VelocityControl velocityControl(od4);
 
         //TODO: Should we use wheelSpeedReadings or filtered groundSpeedReading?
-        auto onWheelSpeedReading{[&acceleration, VERBOSE](cluon::data::Envelope &&envelope)
+        auto onWheelSpeedReading{[&velocityControl, VERBOSE](cluon::data::Envelope &&envelope)
         {
           uint16_t senderStamp = envelope.senderStamp();
           if (senderStamp == 1904) {
             auto wheelSpeedReading = cluon::extractMessage<opendlv::proxy::WheelSpeedReading>(std::move(envelope));
-            acceleration.setLeftWheelSpeed(wheelSpeedReading.wheelSpeed());
+            velocityControl.setLeftWheelSpeed(wheelSpeedReading.wheelSpeed());
             if (VERBOSE) {
-              std::cout << "[LOGIC-ACCELERATION] FL wheel speed reading: " << wheelSpeedReading.wheelSpeed() << std::endl;
+              std::cout << "[LOGIC-VELOCITY] FL wheel speed reading: " << wheelSpeedReading.wheelSpeed() << std::endl;
             }
           } else if (senderStamp == 1903) {
             auto wheelSpeedReading = cluon::extractMessage<opendlv::proxy::WheelSpeedReading>(std::move(envelope));
-            acceleration.setRightWheelSpeed(wheelSpeedReading.wheelSpeed());
+            velocityControl.setRightWheelSpeed(wheelSpeedReading.wheelSpeed());
             if (VERBOSE) {
-              std::cout << "[LOGIC-ACCELERATION] FR wheel speed reading: " << wheelSpeedReading.wheelSpeed() << std::endl;
+              std::cout << "[LOGIC-VELOCITY] FR wheel speed reading: " << wheelSpeedReading.wheelSpeed() << std::endl;
             }
           }
         }};
         od4.dataTrigger(opendlv::proxy::WheelSpeedReading::ID(), onWheelSpeedReading);
 
-        auto atFrequency{[&acceleration, &VERBOSE]() -> bool
+        auto atFrequency{[&velocityControl, &VERBOSE]() -> bool
         {
-            acceleration.step();
+            velocityControl.step();
             return true;
         }};
 
