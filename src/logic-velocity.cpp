@@ -22,6 +22,8 @@ VelocityControl::VelocityControl(cluon::OD4Session &od4)
   : m_od4{od4}
   , m_leftWheelSpeed{0.0f}
   , m_rightWheelSpeed{0.0f}
+
+  , m_readingsMutex{}
 {
   setUp();
 }
@@ -41,11 +43,21 @@ void VelocityControl::tearDown()
 
 void VelocityControl::step()
 {
+  float rightWheelSpeed;
+  float leftWheelSpeed;
+  {
+    std::lock_guard<std::mutex> lock(m_readingsMutex);
+
+    rightWheelSpeed = m_rightWheelSpeed;
+    leftWheelSpeed = m_leftWheelSpeed;
+  }
+
   cluon::data::TimeStamp sampleTime = cluon::time::now();
 
   opendlv::proxy::TorqueRequest msgTorque;
-  msgTorque.torque(10.0f);
+  msgTorque.torque(rightWheelSpeed);
   m_od4.send(msgTorque, sampleTime, 1500); // Left
+  msgTorque.torque(leftWheelSpeed);
   m_od4.send(msgTorque, sampleTime, 1501); // Right
 }
 
@@ -56,5 +68,6 @@ void VelocityControl::setLeftWheelSpeed(float speed)
 
 void VelocityControl::setRightWheelSpeed(float speed)
 {
+  std::lock_guard<std::mutex> lock(m_readingsMutex);
   m_rightWheelSpeed = speed;
 }

@@ -18,6 +18,8 @@
 #ifndef VELOCITYCONTROL_H
 #define VELOCITYCONTROL_H
 
+#include <mutex>
+
 #include "opendlv-standard-message-set.hpp"
 
 
@@ -41,6 +43,8 @@ class VelocityControl {
     cluon::OD4Session &m_od4;
     float m_leftWheelSpeed;
     float m_rightWheelSpeed;
+
+    std::mutex m_readingsMutex;
 
     
 };
