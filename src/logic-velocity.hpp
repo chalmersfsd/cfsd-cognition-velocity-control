@@ -15,29 +15,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef ACCELERATION_H
-#define ACCELERATION_H
+#ifndef VELOCITYCONTROL_H
+#define VELOCITYCONTROL_H
 
 #include "opendlv-standard-message-set.hpp"
 
-enum asState {
-    AS_OFF,
-    AS_READY, 
-    AS_DRIVING, 
-    AS_FINISHED,
-    AS_EMERGENCY,
-    AS_MANUAL
- };
 
-class Acceleration {
+class VelocityControl {
   public:
-    Acceleration(cluon::OD4Session &od4);
-    ~Acceleration();
+    VelocityControl(cluon::OD4Session &od4);
+    ~VelocityControl();
 
   public:
     void step();
 
-    void setAsState(asState state);
     void setLeftWheelSpeed(float speed);
     void setRightWheelSpeed(float speed);
 

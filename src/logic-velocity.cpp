@@ -16,9 +16,9 @@
  */
 
 #include "cluon-complete.hpp"
-#include "logic-acceleration.hpp"
+#include "logic-velocity.hpp"
 
-Acceleration::Acceleration(cluon::OD4Session &od4)
+VelocityControl::VelocityControl(cluon::OD4Session &od4)
   : m_od4{od4}
   , m_asState{asState::AS_OFF}
   , m_leftWheelSpeed{0.0f}
@@ -27,20 +27,20 @@ Acceleration::Acceleration(cluon::OD4Session &od4)
   setUp();
 }
 
-Acceleration::~Acceleration()
+VelocityControl::~VelocityControl()
 {
-  Acceleration::tearDown();
+  VelocityControl::tearDown();
 }
 
-void Acceleration::setUp()
-{
-}
-
-void Acceleration::tearDown()
+void VelocityControl::setUp()
 {
 }
 
-void Acceleration::step()
+void VelocityControl::tearDown()
+{
+}
+
+void VelocityControl::step()
 {
   cluon::data::TimeStamp sampleTime = cluon::time::now();
 
@@ -50,19 +50,12 @@ void Acceleration::step()
   m_od4.send(msgTorque, sampleTime, 1501); // Right
 }
 
-
-
-void Acceleration::setAsState(asState state)
-{
-  m_asState = state;
-}
-
-void Acceleration::setLeftWheelSpeed(float speed)
+void VelocityControl::setLeftWheelSpeed(float speed)
 {
   m_leftWheelSpeed = speed;
 }
 
-void Acceleration::setRightWheelSpeed(float speed)
+void VelocityControl::setRightWheelSpeed(float speed)
 {
   m_rightWheelSpeed = speed;
 }
