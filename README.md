@@ -1,4 +1,4 @@
-# cfsd-cognition-velocity-control
+# cfsd-cognition-velocity-planner
 This microservice generates the speed requests for Lynx. By looking at the curvature of the local or global path the microservice calculates the longitudinal speed of the vehicle and outputs a groundSpeedRequest for the longitudinal control microservice.
 
 ### Build

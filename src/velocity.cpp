@@ -47,13 +47,13 @@ int32_t main(int32_t argc, char **argv) {
             auto wheelSpeedReading = cluon::extractMessage<opendlv::proxy::WheelSpeedReading>(std::move(envelope));
             velocityControl.setLeftWheelSpeed(wheelSpeedReading.wheelSpeed());
             if (VERBOSE) {
-              std::cout << "[LOGIC-VELOCITY] FL wheel speed reading: " << wheelSpeedReading.wheelSpeed() << std::endl;
+              std::cout << "[COGNITION-VELOCITY] FL wheel speed reading: " << wheelSpeedReading.wheelSpeed() << std::endl;
             }
           } else if (senderStamp == 1903) {
             auto wheelSpeedReading = cluon::extractMessage<opendlv::proxy::WheelSpeedReading>(std::move(envelope));
             velocityControl.setRightWheelSpeed(wheelSpeedReading.wheelSpeed());
             if (VERBOSE) {
-              std::cout << "[LOGIC-VELOCITY] FR wheel speed reading: " << wheelSpeedReading.wheelSpeed() << std::endl;
+              std::cout << "[COGNITION-VELOCITY] FR wheel speed reading: " << wheelSpeedReading.wheelSpeed() << std::endl;
             }
           }
         }};
