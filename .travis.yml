@@ -3,9 +3,8 @@ language: cpp
 sudo: required
 branches:
   only:
-  - "/^master$/"
-  - "/^pre-release$/"
-  - "/^v.*$/"
+  - "/^test.*$/"
+  - "/^v[0-9].*$/"
 services:
 - docker
 addons:
@@ -13,21 +12,17 @@ addons:
     update: true
 env:
   global:
-  - BRANCH=${TRAVIS_BRANCH}
-  - TAG=${TRAVIS_TAG}
   - DOCKERHUB='chalmersfsd'
   - IMAGE=`echo ${TRAVIS_REPO_SLUG#*/}`
 install:
-- docker build -f Dockerfile.amd64 -t ${IMAGE}:${BRANCH} .
+- docker build -f Dockerfile.amd64 -t ${IMAGE} .
 script: skip
 after_success:
-- if [[ -z "${TAG}" ]]; then echo "This commit hasn't been tagged, will not be pushed
-  to dockerhub"; exit 0; fi
-- docker --version
 - echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-- docker tag ${IMAGE}:${BRANCH} ${DOCKERHUB}/${IMAGE}:${TAG}
-- docker push ${DOCKERHUB}/${IMAGE}:${TAG}
-- echo "${DOCKERHUB}/${IMAGE}:${TAG}"
+- if [[ "${TRAVIS_BRANCH}" == *test* ]]; then docker tag ${IMAGE} ${DOCKERHUB}/${IMAGE}:${TRAVIS_BRANCH}${TRAVIS_BUILD_NUMBER};
+  docker push ${DOCKERHUB}/${IMAGE}:${TRAVIS_BRANCH}${TRAVIS_BUILD_NUMBER}; echo "${DOCKERHUB}/${IMAGE}:${TRAVIS_BRANCH}${TRAVIS_BUILD_NUMBER}";
+  else docker tag ${IMAGE} ${DOCKERHUB}/${IMAGE}:${TRAVIS_BRANCH}; docker push ${DOCKERHUB}/${IMAGE}:${TRAVIS_BRANCH};
+  echo "${DOCKERHUB}/${IMAGE}:${TRAVIS_BRANCH}"; fi
 notifications:
   email:
     on_success: never
