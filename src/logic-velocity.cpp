@@ -18,10 +18,8 @@
 #include "cluon-complete.hpp"
 #include "logic-velocity.hpp"
 
-VelocityControl::VelocityControl(cluon::OD4Session &od4)
-  : m_od4{od4}
-  , m_leftWheelSpeed{0.0f}
-  , m_rightWheelSpeed{0.0f}
+VelocityControl::VelocityControl()
+  : m_aimPoint{}
 
   , m_readingsMutex{}
 {
@@ -41,33 +39,25 @@ void VelocityControl::tearDown()
 {
 }
 
-void VelocityControl::step()
+opendlv::proxy::GroundSpeedRequest VelocityControl::step()
 {
-  float rightWheelSpeed;
-  float leftWheelSpeed;
+  float aimDistance;
   {
     std::lock_guard<std::mutex> lock(m_readingsMutex);
 
-    rightWheelSpeed = m_rightWheelSpeed;
-    leftWheelSpeed = m_leftWheelSpeed;
+    aimDistance = m_aimPoint.distance();
   }
 
-  cluon::data::TimeStamp sampleTime = cluon::time::now();
+  float speed = aimDistance / 10.0f;
 
-  opendlv::proxy::TorqueRequest msgTorque;
-  msgTorque.torque(rightWheelSpeed);
-  m_od4.send(msgTorque, sampleTime, 1500); // Left
-  msgTorque.torque(leftWheelSpeed);
-  m_od4.send(msgTorque, sampleTime, 1501); // Right
+  opendlv::proxy::GroundSpeedRequest speedRequest;
+  speedRequest.groundSpeed(speed);
+
+  return speedRequest;
 }
 
-void VelocityControl::setLeftWheelSpeed(float speed)
-{
-  m_leftWheelSpeed = speed;
-}
-
-void VelocityControl::setRightWheelSpeed(float speed)
+void VelocityControl::setAimPoint(opendlv::logic::action::AimPoint aimPoint)
 {
   std::lock_guard<std::mutex> lock(m_readingsMutex);
-  m_rightWheelSpeed = speed;
+  m_aimPoint = aimPoint;
 }

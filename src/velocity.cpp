@@ -24,49 +24,50 @@
 int32_t main(int32_t argc, char **argv) {
     int32_t retCode{0};
     auto commandlineArguments = cluon::getCommandlineArguments(argc, argv);
-    if (0 == commandlineArguments.count("cid") || 0 == commandlineArguments.count("freq")) {
+    if (0 == commandlineArguments.count("cid")) {
         std::cerr << argv[0] << "Generates the speed requests for Lynx" << std::endl;
-        std::cerr << "Usage:   " << argv[0] << " --cid=<OpenDaVINCI session> --freq=<Microservice frequency> [--verbose=<Verbose or not>]"
+        std::cerr << "Usage:   " << argv[0] << " --cid=<OpenDaVINCI session> [--verbose=<Verbose or not>]"
         << std::endl;
-        std::cerr << "Example: " << argv[0] << "--cid=111 --freq=2 [--verbose]" << std::endl;
+        std::cerr << "Example: " << argv[0] << "--cid=111 [--verbose]" << std::endl;
         retCode = 1;
     } else {
 
         // Interface to a running OpenDaVINCI session.  
         cluon::OD4Session od4{static_cast<uint16_t>(std::stoi(commandlineArguments["cid"]))};
-        float FREQ{static_cast<float>(std::stof(commandlineArguments["freq"]))};
+
+        // Grab command line arguments
         bool VERBOSE{static_cast<bool>(commandlineArguments.count("verbose"))};
 
-        VelocityControl velocityControl(od4);
+        // VelocityControl object plans the speed
+        VelocityControl velocityControl;
 
-        //TODO: Should we use wheelSpeedReadings or filtered groundSpeedReading?
-        auto onWheelSpeedReading{[&velocityControl, VERBOSE](cluon::data::Envelope &&envelope)
+        // Update on new aimpoint data
+        auto onAimPoint{[&velocityControl, &od4, VERBOSE](cluon::data::Envelope &&envelope)
         {
           uint16_t senderStamp = envelope.senderStamp();
           if (senderStamp == 1904) {
-            auto wheelSpeedReading = cluon::extractMessage<opendlv::proxy::WheelSpeedReading>(std::move(envelope));
-            velocityControl.setLeftWheelSpeed(wheelSpeedReading.wheelSpeed());
+            auto aimPoint = cluon::extractMessage<opendlv::logic::action::AimPoint>(std::move(envelope));
+            velocityControl.setAimPoint(aimPoint);
+
+            // Update and send velocity when we receive new aimpoint
+            auto speedRequest = velocityControl.step();
+            cluon::data::TimeStamp sampleTime = cluon::time::now();
+            od4.send(speedRequest, sampleTime, 2201);
+
             if (VERBOSE) {
-              std::cout << "[COGNITION-VELOCITY] FL wheel speed reading: " << wheelSpeedReading.wheelSpeed() << std::endl;
-            }
-          } else if (senderStamp == 1903) {
-            auto wheelSpeedReading = cluon::extractMessage<opendlv::proxy::WheelSpeedReading>(std::move(envelope));
-            velocityControl.setRightWheelSpeed(wheelSpeedReading.wheelSpeed());
-            if (VERBOSE) {
-              std::cout << "[COGNITION-VELOCITY] FR wheel speed reading: " << wheelSpeedReading.wheelSpeed() << std::endl;
+              std::cout << "[COGNITION-VELOCITY] Aim point distance: " << aimPoint.distance() << "\n"
+                        << "[COGNITION-VELOCITY] Aim point azimuth angle: " << aimPoint.azimuthAngle() << std::endl;
             }
           }
         }};
-        od4.dataTrigger(opendlv::proxy::WheelSpeedReading::ID(), onWheelSpeedReading);
+        od4.dataTrigger(opendlv::logic::action::AimPoint::ID(), onAimPoint);
 
-        auto atFrequency{[&velocityControl, &VERBOSE]() -> bool
-        {
-            velocityControl.step();
-            return true;
-        }};
 
-        od4.timeTrigger(FREQ, atFrequency);
-
+        // Just sleep as this microservice is data driven
+        using namespace std::literals::chrono_literals;
+        while(od4.isRunning()) {
+          std::this_thread::sleep_for(1s);
+        }
 
     }
     return retCode;

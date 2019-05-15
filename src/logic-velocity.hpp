@@ -25,24 +25,23 @@
 
 class VelocityControl {
   public:
-    VelocityControl(cluon::OD4Session &od4);
+    VelocityControl();
     ~VelocityControl();
 
   public:
-    void step();
+    opendlv::proxy::GroundSpeedRequest step();
 
-    void setLeftWheelSpeed(float speed);
-    void setRightWheelSpeed(float speed);
+    void setAimPoint(opendlv::logic::action::AimPoint aimPoint);
 
   private:
     void setUp();
     void tearDown();
+    float constantSpeed();
+    float dynamicSpeed();
 
 
   private:
-    cluon::OD4Session &m_od4;
-    float m_leftWheelSpeed;
-    float m_rightWheelSpeed;
+    opendlv::logic::action::AimPoint m_aimPoint;
 
     std::mutex m_readingsMutex;
 
