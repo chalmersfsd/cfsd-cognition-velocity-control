@@ -25,7 +25,7 @@
 
 class VelocityControl {
   public:
-    VelocityControl();
+    VelocityControl(float);
     ~VelocityControl();
 
   public:
@@ -36,12 +36,16 @@ class VelocityControl {
   private:
     void setUp();
     void tearDown();
-    float constantSpeed();
-    float dynamicSpeed();
+    float constantSpeed(float distance);
+    float dynamicSpeed(float distance);
+
+    typedef float (VelocityControl::*vcptr)(float);
+    vcptr calculateSpeed;
 
 
   private:
     opendlv::logic::action::AimPoint m_aimPoint;
+    float m_useConstantSpeed;
 
     std::mutex m_readingsMutex;
 

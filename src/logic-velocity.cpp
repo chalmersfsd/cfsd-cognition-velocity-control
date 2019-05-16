@@ -18,8 +18,10 @@
 #include "cluon-complete.hpp"
 #include "logic-velocity.hpp"
 
-VelocityControl::VelocityControl()
-  : m_aimPoint{}
+VelocityControl::VelocityControl(float useConstantSpeed)
+  : calculateSpeed{NULL}
+  , m_aimPoint{}
+  , m_useConstantSpeed{useConstantSpeed}
 
   , m_readingsMutex{}
 {
@@ -33,6 +35,11 @@ VelocityControl::~VelocityControl()
 
 void VelocityControl::setUp()
 {
+  if (m_useConstantSpeed > 0.1f) {
+    calculateSpeed = &VelocityControl::constantSpeed;
+  } else {
+    calculateSpeed = &VelocityControl::dynamicSpeed;
+  }
 }
 
 void VelocityControl::tearDown()
@@ -48,13 +55,28 @@ opendlv::proxy::GroundSpeedRequest VelocityControl::step()
     aimDistance = m_aimPoint.distance();
   }
 
-  float speed = aimDistance / 10.0f;
+
+  float speed = (this->*calculateSpeed)(aimDistance);
 
   opendlv::proxy::GroundSpeedRequest speedRequest;
   speedRequest.groundSpeed(speed);
 
   return speedRequest;
 }
+
+float VelocityControl::constantSpeed(float distance)
+{
+  // void input arguments since they are not used
+  (void) distance;
+  return m_constantSpeed;
+}
+
+float VelocityControl::dynamicSpeed(float distance)
+{
+  (void) distance;
+  return 5.0f;
+}
+
 
 void VelocityControl::setAimPoint(opendlv::logic::action::AimPoint aimPoint)
 {
