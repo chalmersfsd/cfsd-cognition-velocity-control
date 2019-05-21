@@ -24,11 +24,12 @@
 int32_t main(int32_t argc, char **argv) {
     int32_t retCode{0};
     auto commandlineArguments = cluon::getCommandlineArguments(argc, argv);
-    if (0 == commandlineArguments.count("cid")) {
+    if (0 == commandlineArguments.count("cid") || 0 == commandlineArguments.count("ayLimit")) {
         std::cerr << argv[0] << "Generates the speed requests for Lynx" << std::endl;
-        std::cerr << "Usage:   " << argv[0] << " --cid=<OpenDaVINCI session> [--constantSpeed=<Constant speed request>] [--verbose=<Verbose or not>]"
+        std::cerr << "Usage:   " << argv[0] << " --cid=<OpenDaVINCI session> --ayLimit=<Max lateral acceleration> "
+                  << "[--constantSpeed=<Constant speed request>] [--verbose=<Verbose or not>]"
         << std::endl;
-        std::cerr << "Example: " << argv[0] << "--cid=111 [--constantSpeed=10.0f] [--verbose]" << std::endl;
+        std::cerr << "Example: " << argv[0] << "--cid=111 --ayLimit=10.0 [--constantSpeed=10.0f] [--verbose]" << std::endl;
         retCode = 1;
     } else {
 
@@ -39,10 +40,11 @@ int32_t main(int32_t argc, char **argv) {
         bool useConstantSpeed{static_cast<bool>(commandlineArguments.count("constantSpeed"))};
         float constantSpeed{useConstantSpeed ? static_cast<float>(std::stof(commandlineArguments["constantSpeed"])) : 0.0f};
 
+        float ayLimit{static_cast<float>(std::stof(commandlineArguments["ayLimit"]))};
         bool VERBOSE{static_cast<bool>(commandlineArguments.count("verbose"))};
 
         // VelocityControl object plans the speed
-        VelocityControl velocityControl(constantSpeed);
+        VelocityControl velocityControl(constantSpeed, ayLimit);
 
         // Update on new aimpoint data
         auto onAimPoint{[&velocityControl, &od4, VERBOSE](cluon::data::Envelope &&envelope)
@@ -66,14 +68,11 @@ int32_t main(int32_t argc, char **argv) {
         od4.dataTrigger(opendlv::logic::action::AimPoint::ID(), onAimPoint);
 
 
+
         // Just sleep as this microservice is data driven
         using namespace std::literals::chrono_literals;
         while(od4.isRunning()) {
           std::this_thread::sleep_for(1s);
-          auto speedRequest = velocityControl.step();
-            cluon::data::TimeStamp sampleTime = cluon::time::now();
-            od4.send(speedRequest, sampleTime, 2201);
-
         }
 
     }

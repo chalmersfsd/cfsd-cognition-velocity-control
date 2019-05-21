@@ -19,13 +19,17 @@
 #define VELOCITYCONTROL_H
 
 #include <mutex>
+#include <cmath>
+
+#include <Eigen/Core>
+// Good reference: https://eigen.tuxfamily.org/dox/AsciiQuickReference.txt
 
 #include "opendlv-standard-message-set.hpp"
 
 
 class VelocityControl {
   public:
-    VelocityControl(float);
+    VelocityControl(float constantSpeed, float ayLimit);
     ~VelocityControl();
 
   public:
@@ -36,16 +40,19 @@ class VelocityControl {
   private:
     void setUp();
     void tearDown();
-    float constantSpeed(float distance);
-    float dynamicSpeed(float distance);
+    float constantSpeed();
+    float dynamicSpeed();
+    float pointDistance(Eigen::MatrixXf &points, int index1, int index2);
 
-    typedef float (VelocityControl::*vcptr)(float);
+    // Some class method pointer magic
+    typedef float (VelocityControl::*vcptr)();
     vcptr calculateSpeed;
 
 
   private:
     opendlv::logic::action::AimPoint m_aimPoint;
     float m_useConstantSpeed;
+    float m_ayLimit;
 
     std::mutex m_readingsMutex;
 
