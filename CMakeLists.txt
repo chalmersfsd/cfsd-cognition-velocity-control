@@ -23,6 +23,10 @@ set(OPENDLV_STANDARD_MESSAGE_SET opendlv-standard-message-set-v0.9.6.odvd)
 set(CLUON_COMPLETE cluon-complete-v0.0.121.hpp)
 
 ################################################################################
+# Set the search path for .cmake files.
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
+
+################################################################################
 # This project requires C++14 or newer.
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -78,6 +82,12 @@ add_library(${PROJECT_NAME}-core OBJECT ${CMAKE_CURRENT_SOURCE_DIR}/src/logic-ve
 add_custom_target(generate_opendlv_standard_message_set_hpp DEPENDS ${CMAKE_BINARY_DIR}/opendlv-standard-message-set.hpp)
 add_dependencies(${PROJECT_NAME}-core generate_opendlv_standard_message_set_hpp)
 set(LIBRARIES Threads::Threads)
+
+################################################################################
+# Eigen ("SYSTEM": make it "system headers" and compiler would suppresses warnings against Eigen headers)
+find_package(Eigen3 REQUIRED)
+include_directories(SYSTEM ${EIGEN3_INCLUDE_DIR})
+set(LIBRARIES ${LIBRARIES} Eigen3::Eigen) # maybe unnecessary since Eigen is header-only
 
 ################################################################################
 # Create executable.
