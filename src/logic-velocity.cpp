@@ -21,12 +21,15 @@
 VelocityControl::VelocityControl(bool useConstantSpeed, float ayLimit, float velocityLimit, float decelerationLimit)
   : calculateSpeed{NULL}
   , m_aimPoint{}
+  , m_path{}
+  , m_speedRequest{0.0f}
   , m_useConstantSpeed{useConstantSpeed}
   , m_ayLimit{ayLimit}
   , m_velocityLimit{velocityLimit}
   , m_decelerationLimit{decelerationLimit}
 
-  , m_readingsMutex{}
+  , m_pathMutex{}
+  , m_aimPointMutex{}
 {
   setUp();
 }
@@ -71,17 +74,19 @@ float VelocityControl::constantSpeed()
 float VelocityControl::dynamicSpeed()
 {
   float aimAngle;
-  Eigen::MatrixXf path(6,2);
+  Eigen::MatrixXf path;
   {
-    std::lock_guard<std::mutex> lock(m_readingsMutex);
+    std::lock_guard<std::mutex> lock1(m_pathMutex);
+    std::lock_guard<std::mutex> lock2(m_aimPointMutex);
 
+    path = m_path;
     aimAngle = m_aimPoint.azimuthAngle();
-    path << 0.936318f, 1.69872f,
-            1.36093f, 1.90181f,
-            1.78554f, 2.10489f,
-            2.21016f, 2.30798f,
-            2.63477f, 2.51106f,
-            3.05938f, 2.71415f;
+  }
+  std::cout << path << std::endl;
+
+  // Return previus request if the current path contains too few points
+  if (path.rows() < 4) {
+    return m_speedRequest;
   }
 
   // Go through all points and triangulate path radius except the two last points
@@ -134,7 +139,9 @@ float VelocityControl::dynamicSpeed()
     }
   }
 
-  return speedProfile[1] * (1 + std::abs(aimAngle));
+  // Return second point in path
+  m_speedRequest = speedProfile[1] * (1 + std::abs(aimAngle));
+  return m_speedRequest;
 }
 
 // ############################ UTILITY FUNCTIONS ###################################
@@ -148,8 +155,14 @@ float VelocityControl::pointDistance(Eigen::MatrixXf &points, int i, int j)
 
 // ################################# SETTERS ########################################
 
+void VelocityControl::setPath(Eigen::MatrixXf path)
+{
+  std::lock_guard<std::mutex> lock(m_pathMutex);
+  m_path = path;
+}
+
 void VelocityControl::setAimPoint(opendlv::logic::action::AimPoint aimPoint)
 {
-  std::lock_guard<std::mutex> lock(m_readingsMutex);
+  std::lock_guard<std::mutex> lock(m_aimPointMutex);
   m_aimPoint = aimPoint;
 }

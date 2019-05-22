@@ -5,3 +5,8 @@ services:
         image: testcontainer:latest
         network_mode: "host"
         command: "velocity --cid=219 --ayLimit=5.0 --velocityLimit=10.0 --decelerationLimit=5.0"
+
+    cfsd-logic-pathplanner:
+        image: chalmersfsd/cfsd-logic-pathplanner:v0.0.1
+        network_mode: "host"
+        command: "cfsd-logic-pathplanner --cid=219 --freq=1"

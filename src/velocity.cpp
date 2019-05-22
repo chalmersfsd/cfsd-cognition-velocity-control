@@ -51,18 +51,12 @@ int32_t main(int32_t argc, char **argv) {
     // VelocityControl object plans the speed
     VelocityControl velocityControl(useConstantSpeed, ayLimit, velocityLimit, decelerationLimit);
 
-    // Update on new aimpoint data
     auto onAimPoint{[&velocityControl, &od4, VERBOSE](cluon::data::Envelope &&envelope)
       {
         uint16_t senderStamp = envelope.senderStamp();
         if (senderStamp == 1904) {
           auto aimPoint = cluon::extractMessage<opendlv::logic::action::AimPoint>(std::move(envelope));
           velocityControl.setAimPoint(aimPoint);
-
-          // Update and send velocity when we receive new aimpoint
-          auto speedRequest = velocityControl.step();
-          cluon::data::TimeStamp sampleTime = cluon::time::now();
-          od4.send(speedRequest, sampleTime, 2201);
 
           if (VERBOSE) {
             std::cout << "[COGNITION-VELOCITY] Aim point distance: " << aimPoint.distance() << "\n"
@@ -71,32 +65,35 @@ int32_t main(int32_t argc, char **argv) {
         }
       }};
 
-    auto onLocalPath{[VERBOSE](cluon::data::Envelope &&envelope)
+    auto onLocalPath{[&velocityControl, &od4, VERBOSE](cluon::data::Envelope &&envelope)
       {
         uint16_t senderStamp = envelope.senderStamp();
         if (senderStamp == 2601) {
           auto msg = cluon::extractMessage<opendlv::logic::action::LocalPath>(std::move(envelope));
 
-          std::vector<std::pair<float, float>> path;
-
           std::string data = msg.data();
-          for (uint32_t i = 0; i < 3 * msg.length(); i += 3) {
+          uint32_t length = msg.length();
+          Eigen::MatrixXf path(length, 2);
+          for (uint32_t i = 0; i < length; i++) {
             float x;
             float y;
 
-            memcpy(&x, data.c_str() + (i + 0) * 4, 4);
-            memcpy(&y, data.c_str() + (i + 1) * 4, 4);
+            memcpy(&x, data.c_str() + (3 * i + 0) * 4, 4);
+            memcpy(&y, data.c_str() + (3 * i + 1) * 4, 4);
             // z not parsed, since not used
             
-            path.push_back(std::pair<float, float>(x, y));
+            path(i,0) = x;
+            path(i,1) = y;
           }
 
-          if (VERBOSE) {
-            std::cout << "Got path (x, y): " << std::endl;
-            for (auto c : path) {
-              std::cout << "   " << c.first << ", " << c.second << std::endl;
-            }
-          }
+          velocityControl.setPath(path);
+
+          // Update and send velocity when we receive new path
+          auto speedRequest = velocityControl.step();
+          cluon::data::TimeStamp sampleTime = cluon::time::now();
+          od4.send(speedRequest, sampleTime, 2201);
+
+
         }
       }};
     od4.dataTrigger(opendlv::logic::action::LocalPath::ID(), onLocalPath);

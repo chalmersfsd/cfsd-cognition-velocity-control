@@ -35,6 +35,7 @@ class VelocityControl {
   public:
     opendlv::proxy::GroundSpeedRequest step();
 
+    void setPath(Eigen::MatrixXf path);
     void setAimPoint(opendlv::logic::action::AimPoint aimPoint);
 
   private:
@@ -51,12 +52,16 @@ class VelocityControl {
 
   private:
     opendlv::logic::action::AimPoint m_aimPoint;
+    Eigen::MatrixXf m_path;
+    float m_speedRequest;
+
     bool m_useConstantSpeed;
     float m_ayLimit;
     float m_velocityLimit;
     float m_decelerationLimit;
 
-    std::mutex m_readingsMutex;
+    std::mutex m_pathMutex;
+    std::mutex m_aimPointMutex;
 
     
 };
