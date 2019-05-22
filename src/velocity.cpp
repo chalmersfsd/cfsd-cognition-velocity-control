@@ -24,27 +24,31 @@
 int32_t main(int32_t argc, char **argv) {
     int32_t retCode{0};
     auto commandlineArguments = cluon::getCommandlineArguments(argc, argv);
-    if (0 == commandlineArguments.count("cid") || 0 == commandlineArguments.count("ayLimit")) {
+    if (0 == commandlineArguments.count("cid") || 0 == commandlineArguments.count("ayLimit")
+        || 0 == commandlineArguments.count("velocityLimit")
+        || 0 == commandlineArguments.count("decelerationLimit")) {
         std::cerr << argv[0] << "Generates the speed requests for Lynx" << std::endl;
         std::cerr << "Usage:   " << argv[0] << " --cid=<OpenDaVINCI session> --ayLimit=<Max lateral acceleration> "
+                  << " --velocityLimit=<Velocity limit> --decelerationLimit=<Deceleration Limit> "
                   << "[--constantSpeed=<Constant speed request>] [--verbose=<Verbose or not>]"
         << std::endl;
-        std::cerr << "Example: " << argv[0] << "--cid=111 --ayLimit=10.0 [--constantSpeed=10.0f] [--verbose]" << std::endl;
+        std::cerr << "Example: " << argv[0] << "--cid=111 --ayLimit=10.0 --velocityLimit=10.0 --decelerationLimit=5.0 [--constantSpeed] [--verbose]" << std::endl;
         retCode = 1;
     } else {
 
         // Interface to a running OpenDaVINCI session.  
         cluon::OD4Session od4{static_cast<uint16_t>(std::stoi(commandlineArguments["cid"]))};
 
-        // If no constant speed arguments is defined, set it to 0.0f
+        // If useConstantSpeed is defined, velocityLimit is used as constant speed
         bool useConstantSpeed{static_cast<bool>(commandlineArguments.count("constantSpeed"))};
-        float constantSpeed{useConstantSpeed ? static_cast<float>(std::stof(commandlineArguments["constantSpeed"])) : 0.0f};
 
         float ayLimit{static_cast<float>(std::stof(commandlineArguments["ayLimit"]))};
+        float velocityLimit{static_cast<float>(std::stof(commandlineArguments["velocityLimit"]))};
+        float decelerationLimit{static_cast<float>(std::stof(commandlineArguments["decelerationLimit"]))};
         bool VERBOSE{static_cast<bool>(commandlineArguments.count("verbose"))};
 
         // VelocityControl object plans the speed
-        VelocityControl velocityControl(constantSpeed, ayLimit);
+        VelocityControl velocityControl(useConstantSpeed, ayLimit, velocityLimit, decelerationLimit);
 
         // Update on new aimpoint data
         auto onAimPoint{[&velocityControl, &od4, VERBOSE](cluon::data::Envelope &&envelope)

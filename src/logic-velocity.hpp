@@ -29,7 +29,7 @@
 
 class VelocityControl {
   public:
-    VelocityControl(float constantSpeed, float ayLimit);
+    VelocityControl(bool useConstantSpeed, float ayLimit, float velocityLimit, float decelerationLimit);
     ~VelocityControl();
 
   public:
@@ -51,8 +51,10 @@ class VelocityControl {
 
   private:
     opendlv::logic::action::AimPoint m_aimPoint;
-    float m_useConstantSpeed;
+    bool m_useConstantSpeed;
     float m_ayLimit;
+    float m_velocityLimit;
+    float m_decelerationLimit;
 
     std::mutex m_readingsMutex;
 
