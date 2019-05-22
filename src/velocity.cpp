@@ -54,7 +54,7 @@ int32_t main(int32_t argc, char **argv) {
     auto onAimPoint{[&velocityControl, &od4, VERBOSE](cluon::data::Envelope &&envelope)
       {
         uint16_t senderStamp = envelope.senderStamp();
-        if (senderStamp == 1904) {
+        if (senderStamp == 2701) {
           auto aimPoint = cluon::extractMessage<opendlv::logic::action::AimPoint>(std::move(envelope));
           velocityControl.setAimPoint(aimPoint);
 
@@ -97,7 +97,6 @@ int32_t main(int32_t argc, char **argv) {
         }
       }};
     od4.dataTrigger(opendlv::logic::action::LocalPath::ID(), onLocalPath);
-
 
     // Just sleep as this microservice is data driven
     using namespace std::literals::chrono_literals;

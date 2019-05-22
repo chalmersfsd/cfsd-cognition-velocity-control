@@ -117,7 +117,6 @@ float VelocityControl::dynamicSpeed()
     } else {
       float area = 0.25f * sqrtf((A + (B + C)) * (C - (A - B)) * (C + (A - B)) * (A + (B - C)));
       curveRadii[i] = A * B * C / (4.0f * area);
-      // std::cout << "(" << A << ", " << B << ", " << C << ")" << std::endl;
     }
   }
 
