@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018  Christian Berger
+ * Copyright (C) 2018  Love Mowitz
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
 
 #include "cluon-complete.hpp"
 #include "opendlv-standard-message-set.hpp"
+#include "cfsd-extended-message-set.hpp"
 
 #include "logic-velocity.hpp"
 #include <iostream>
