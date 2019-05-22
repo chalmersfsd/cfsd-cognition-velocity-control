@@ -23,64 +23,92 @@
 #include <iostream>
 
 int32_t main(int32_t argc, char **argv) {
-    int32_t retCode{0};
-    auto commandlineArguments = cluon::getCommandlineArguments(argc, argv);
-    if (0 == commandlineArguments.count("cid") || 0 == commandlineArguments.count("ayLimit")
-        || 0 == commandlineArguments.count("velocityLimit")
-        || 0 == commandlineArguments.count("decelerationLimit")) {
-        std::cerr << argv[0] << "Generates the speed requests for Lynx" << std::endl;
-        std::cerr << "Usage:   " << argv[0] << " --cid=<OpenDaVINCI session> --ayLimit=<Max lateral acceleration> "
-                  << " --velocityLimit=<Velocity limit> --decelerationLimit=<Deceleration Limit> "
-                  << "[--constantSpeed=<Constant speed request>] [--verbose=<Verbose or not>]"
-        << std::endl;
-        std::cerr << "Example: " << argv[0] << "--cid=111 --ayLimit=10.0 --velocityLimit=10.0 --decelerationLimit=5.0 [--constantSpeed] [--verbose]" << std::endl;
-        retCode = 1;
-    } else {
+  int32_t retCode{0};
+  auto commandlineArguments = cluon::getCommandlineArguments(argc, argv);
+  if (0 == commandlineArguments.count("cid") || 0 == commandlineArguments.count("ayLimit")
+      || 0 == commandlineArguments.count("velocityLimit")
+      || 0 == commandlineArguments.count("decelerationLimit")) {
+    std::cerr << argv[0] << "Generates the speed requests for Lynx" << std::endl;
+    std::cerr << "Usage:   " << argv[0] << " --cid=<OpenDaVINCI session> --ayLimit=<Max lateral acceleration> "
+      << " --velocityLimit=<Velocity limit> --decelerationLimit=<Deceleration Limit> "
+      << "[--constantSpeed=<Constant speed request>] [--verbose=<Verbose or not>]"
+      << std::endl;
+    std::cerr << "Example: " << argv[0] << "--cid=111 --ayLimit=10.0 --velocityLimit=10.0 --decelerationLimit=5.0 [--constantSpeed] [--verbose]" << std::endl;
+    retCode = 1;
+  } else {
 
-        // Interface to a running OpenDaVINCI session.  
-        cluon::OD4Session od4{static_cast<uint16_t>(std::stoi(commandlineArguments["cid"]))};
+    // Interface to a running OpenDaVINCI session.  
+    cluon::OD4Session od4{static_cast<uint16_t>(std::stoi(commandlineArguments["cid"]))};
 
-        // If useConstantSpeed is defined, velocityLimit is used as constant speed
-        bool useConstantSpeed{static_cast<bool>(commandlineArguments.count("constantSpeed"))};
+    // If useConstantSpeed is defined, velocityLimit is used as constant speed
+    bool useConstantSpeed{static_cast<bool>(commandlineArguments.count("constantSpeed"))};
 
-        float ayLimit{static_cast<float>(std::stof(commandlineArguments["ayLimit"]))};
-        float velocityLimit{static_cast<float>(std::stof(commandlineArguments["velocityLimit"]))};
-        float decelerationLimit{static_cast<float>(std::stof(commandlineArguments["decelerationLimit"]))};
-        bool VERBOSE{static_cast<bool>(commandlineArguments.count("verbose"))};
+    float ayLimit{static_cast<float>(std::stof(commandlineArguments["ayLimit"]))};
+    float velocityLimit{static_cast<float>(std::stof(commandlineArguments["velocityLimit"]))};
+    float decelerationLimit{static_cast<float>(std::stof(commandlineArguments["decelerationLimit"]))};
+    bool VERBOSE{static_cast<bool>(commandlineArguments.count("verbose"))};
 
-        // VelocityControl object plans the speed
-        VelocityControl velocityControl(useConstantSpeed, ayLimit, velocityLimit, decelerationLimit);
+    // VelocityControl object plans the speed
+    VelocityControl velocityControl(useConstantSpeed, ayLimit, velocityLimit, decelerationLimit);
 
-        // Update on new aimpoint data
-        auto onAimPoint{[&velocityControl, &od4, VERBOSE](cluon::data::Envelope &&envelope)
-        {
-          uint16_t senderStamp = envelope.senderStamp();
-          if (senderStamp == 1904) {
-            auto aimPoint = cluon::extractMessage<opendlv::logic::action::AimPoint>(std::move(envelope));
-            velocityControl.setAimPoint(aimPoint);
+    // Update on new aimpoint data
+    auto onAimPoint{[&velocityControl, &od4, VERBOSE](cluon::data::Envelope &&envelope)
+      {
+        uint16_t senderStamp = envelope.senderStamp();
+        if (senderStamp == 1904) {
+          auto aimPoint = cluon::extractMessage<opendlv::logic::action::AimPoint>(std::move(envelope));
+          velocityControl.setAimPoint(aimPoint);
 
-            // Update and send velocity when we receive new aimpoint
-            auto speedRequest = velocityControl.step();
-            cluon::data::TimeStamp sampleTime = cluon::time::now();
-            od4.send(speedRequest, sampleTime, 2201);
+          // Update and send velocity when we receive new aimpoint
+          auto speedRequest = velocityControl.step();
+          cluon::data::TimeStamp sampleTime = cluon::time::now();
+          od4.send(speedRequest, sampleTime, 2201);
 
-            if (VERBOSE) {
-              std::cout << "[COGNITION-VELOCITY] Aim point distance: " << aimPoint.distance() << "\n"
-                        << "[COGNITION-VELOCITY] Aim point azimuth angle: " << aimPoint.azimuthAngle() << std::endl;
+          if (VERBOSE) {
+            std::cout << "[COGNITION-VELOCITY] Aim point distance: " << aimPoint.distance() << "\n"
+              << "[COGNITION-VELOCITY] Aim point azimuth angle: " << aimPoint.azimuthAngle() << std::endl;
+          }
+        }
+      }};
+
+    auto onLocalPath{[VERBOSE](cluon::data::Envelope &&envelope)
+      {
+        uint16_t senderStamp = envelope.senderStamp();
+        if (senderStamp == 2601) {
+          auto msg = cluon::extractMessage<opendlv::logic::action::LocalPath>(std::move(envelope));
+
+          std::vector<std::pair<float, float>> path;
+
+          std::string data = msg.data();
+          for (uint32_t i = 0; i < 3 * msg.length(); i += 3) {
+            float x;
+            float y;
+
+            memcpy(&x, data.c_str() + (i + 0) * 4, 4);
+            memcpy(&y, data.c_str() + (i + 1) * 4, 4);
+            // z not parsed, since not used
+            
+            path.push_back(std::pair<float, float>(x, y));
+          }
+
+          if (VERBOSE) {
+            std::cout << "Got path (x, y): " << std::endl;
+            for (auto c : path) {
+              std::cout << "   " << c.first << ", " << c.second << std::endl;
             }
           }
-        }};
-        od4.dataTrigger(opendlv::logic::action::AimPoint::ID(), onAimPoint);
-
-
-
-        // Just sleep as this microservice is data driven
-        using namespace std::literals::chrono_literals;
-        while(od4.isRunning()) {
-          std::this_thread::sleep_for(1s);
         }
+      }};
+    od4.dataTrigger(opendlv::logic::action::LocalPath::ID(), onLocalPath);
 
+
+    // Just sleep as this microservice is data driven
+    using namespace std::literals::chrono_literals;
+    while(od4.isRunning()) {
+      std::this_thread::sleep_for(1s);
     }
-    return retCode;
+
+  }
+  return retCode;
 }
 
