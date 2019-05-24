@@ -89,9 +89,13 @@ int32_t main(int32_t argc, char **argv) {
           velocityControl.setPath(path);
 
           // Update and send velocity when we receive new path
-          auto speedRequest = velocityControl.step();
+          opendlv::proxy::GroundSpeedRequest speedRequest = velocityControl.step();
           cluon::data::TimeStamp sampleTime = cluon::time::now();
           od4.send(speedRequest, sampleTime, 2201);
+
+          if (VERBOSE) {
+            std::cout << "Ground speed request: " << speedRequest.groundSpeed() << std::endl; 
+          }
 
 
         }
