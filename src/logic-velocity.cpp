@@ -41,6 +41,7 @@ VelocityControl::~VelocityControl()
 
 void VelocityControl::setUp()
 {
+  std::cout << "Setting up velocity planner..." << std::endl;
   // Point at constant speed or changing speed function based on program input
   if (m_useConstantSpeed) {
     calculateSpeed = &VelocityControl::constantSpeed;
@@ -82,7 +83,6 @@ float VelocityControl::dynamicSpeed()
     path = m_path;
     aimAngle = m_aimPoint.azimuthAngle();
   }
-  std::cout << path << std::endl;
 
   // Return previus request if the current path contains too few points
   if (path.rows() < 4) {
