@@ -115,7 +115,7 @@ float VelocityControl::dynamicSpeed()
     if (C - (A - B) <= 0) {
       curveRadii[i] = 10000.0f;
     } else {
-      float area = 0.25f * sqrtf((A + (B + C)) * (C - (A - B)) * (C + (A - B)) * (A + (B - C)));
+      float area = 0.25f * std::sqrt((A + (B + C)) * (C - (A - B)) * (C + (A - B)) * (A + (B - C)));
       curveRadii[i] = A * B * C / (4.0f * area);
     }
   }
@@ -134,7 +134,8 @@ float VelocityControl::dynamicSpeed()
 
     // If the required deceleration is more than the limit, change the speed profile
     if (requiredAcceleration < m_decelerationLimit) {
-      speedProfile[i-1] = std::sqrt(std::pow(speedProfile[i], 2.0f) - 2.0f * m_decelerationLimit * distance);
+      speedProfile[i-1] = std::sqrt(std::abs(std::pow(speedProfile[i], 2.0f) - 2.0f * m_decelerationLimit * distance));
+      std::cout << "[LOGIC-VELOCITY] speedProfile: " << speedProfile[i-1] << std::endl;
     }
   }
 
