@@ -135,7 +135,6 @@ float VelocityControl::dynamicSpeed()
     // If the required deceleration is more than the limit, change the speed profile
     if (requiredAcceleration < m_decelerationLimit) {
       speedProfile[i-1] = std::sqrt(std::abs(std::pow(speedProfile[i], 2.0f) - 2.0f * m_decelerationLimit * distance));
-      std::cout << "[LOGIC-VELOCITY] speedProfile: " << speedProfile[i-1] << std::endl;
     }
   }
 
