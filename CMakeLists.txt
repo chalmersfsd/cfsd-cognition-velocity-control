@@ -43,16 +43,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \
     -O2 \
     -fstack-protector \
     -fomit-frame-pointer \
-    -pipe \
-    -pedantic -pedantic-errors \
-    -Werror \
-    -Weffc++ \
-    -Wall -Wextra -Wshadow -Wdeprecated \
-    -Wdiv-by-zero -Wfloat-equal -Wfloat-conversion -Wsign-compare -Wpointer-arith \
-    -Wuninitialized -Wunreachable-code \
-    -Wunused -Wunused-function -Wunused-label -Wunused-parameter -Wunused-but-set-parameter -Wunused-but-set-variable \
-    -Wunused-value -Wunused-variable -Wunused-result \
-    -Wmissing-field-initializers -Wmissing-format-attribute -Wmissing-include-dirs -Wmissing-noreturn")
+    -pipe")
 # Threads are necessary for linking the resulting binaries as UDPReceiver is running in parallel.
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
@@ -91,6 +82,16 @@ set(LIBRARIES Threads::Threads)
 find_package(Eigen3 REQUIRED)
 include_directories(SYSTEM ${EIGEN3_INCLUDE_DIR})
 set(LIBRARIES ${LIBRARIES} Eigen3::Eigen) # maybe unnecessary since Eigen is header-only
+
+################################################################################
+# Pangolin
+option(WITH_VIEWER "Enable visulization" ON)
+if (WITH_VIEWER)
+    add_definitions(-DUSE_VIEWER)
+    find_package(Pangolin 0.4 REQUIRED)
+    include_directories(${Pangolin_INCLUDE_DIRS})
+    set(LIBRARIES ${LIBRARIES} ${Pangolin_LIBRARIES})
+endif()
 
 ################################################################################
 # Create executable.
