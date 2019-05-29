@@ -54,14 +54,9 @@ FROM alpine:3.8
 MAINTAINER Love Mowitz "lovem@student.chalmers.se"
 RUN apk update && \
     apk --no-cache add \
-        ca-certificates \
-        cmake \
-        g++ \
-        git \
-        make \
         eigen \
         glew \
-        
+        mesa-dri-swrast
 
 WORKDIR /usr/bin
 COPY --from=builder /var/tmp/Pangolin/build/src/libpangolin.so /usr/lib
