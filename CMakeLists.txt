@@ -44,6 +44,17 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \
     -fstack-protector \
     -fomit-frame-pointer \
     -pipe")
+#\
+#-pedantic -pedantic-errors \
+#-Werror \
+#-Weffc++ \
+#-Wall -Wextra -Wshadow -Wdeprecated \
+#-Wdiv-by-zero -Wfloat-equal -Wfloat-conversion -Wsign-compare -Wpointer-arith \
+#-Wuninitialized -Wunreachable-code \
+#-Wunused -Wunused-function -Wunused-label -Wunused-parameter -Wunused-but-set-parameter -Wunused-but-set-variable \
+#-Wunused-value -Wunused-variable -Wunused-result \
+#-Wmissing-field-initializers -Wmissing-format-attribute -Wmissing-include-dirs -Wmissing-noreturn
+
 # Threads are necessary for linking the resulting binaries as UDPReceiver is running in parallel.
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
@@ -71,7 +82,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 ################################################################################
 # Gather all object code first to avoid double compilation.
-add_library(${PROJECT_NAME}-core OBJECT ${CMAKE_CURRENT_SOURCE_DIR}/src/logic-velocity.cpp)
+add_library(${PROJECT_NAME}-core OBJECT ${CMAKE_CURRENT_SOURCE_DIR}/src/logic-velocity.cpp ${CMAKE_CURRENT_SOURCE_DIR}/src/viewer.cpp)
 # Add dependency to generate .hpp file.
 add_custom_target(generate_opendlv_standard_message_set_hpp DEPENDS ${CMAKE_BINARY_DIR}/opendlv-standard-message-set.hpp)
 add_dependencies(${PROJECT_NAME}-core generate_opendlv_standard_message_set_hpp)

@@ -23,7 +23,7 @@
 #include <iostream>
 
 #ifdef USE_VIEWER
-#include <pangolin/pangolin.h>
+#include "viewer.hpp"
 #endif
 
 int32_t main(int32_t argc, char **argv) {
@@ -68,6 +68,7 @@ int32_t main(int32_t argc, char **argv) {
           }
         }
       }};
+    od4.dataTrigger(opendlv::logic::action::AimPoint::ID(), onAimPoint);
 
     auto onLocalPath{[&velocityControl, &od4, VERBOSE](cluon::data::Envelope &&envelope)
       {
@@ -110,33 +111,9 @@ int32_t main(int32_t argc, char **argv) {
     od4.dataTrigger(opendlv::logic::action::LocalPath::ID(), onLocalPath);
 
     #ifdef USE_VIEWER
-    pangolin::CreateWindowAndBind("Main",640,480);
-    glEnable(GL_DEPTH_TEST);
-
-    // Define Projection and initial ModelView matrix
-    pangolin::OpenGlRenderState s_cam(
-        pangolin::ProjectionMatrix(640,480,420,420,320,240,0.2,100),
-        pangolin::ModelViewLookAt(-2,2,-2, 0,0,0, pangolin::AxisY)
-    );
-
-    // Create Interactive View in window
-    pangolin::Handler3D handler(s_cam);
-    pangolin::View& d_cam = pangolin::CreateDisplay()
-            .SetBounds(0.0, 1.0, 0.0, 1.0, -640.0f/480.0f)
-            .SetHandler(&handler);
-
-    while( !pangolin::ShouldQuit() )
-    {
-      // Clear screen and activate view to render into
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-      d_cam.Activate(s_cam);
-
-      // Render OpenGL Cube
-      pangolin::glDrawColouredCube();
-
-      // Swap frames and Process Events
-      pangolin::FinishFrame();
-    }
+    // Run a separate thread for visualization
+    std::shared_ptr<Viewer> _pViewer = std::make_shared<Viewer>();
+    std::thread _viewerThread = std::thread(&Viewer::run, _pViewer); // no need to detach, since there is a while loop in Viewer::run()
     #endif
 
     // Just sleep as this microservice is data driven
