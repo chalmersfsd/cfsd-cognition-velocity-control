@@ -8,6 +8,7 @@
 #include <thread>
 #include <chrono>
 #include <mutex>
+#include <cmath>
 
 #include "logic-velocity.hpp"
 
@@ -19,6 +20,11 @@ class Viewer {
 
   public:
     void run();
+
+  private:
+    void drawPath();
+    void drawAimPoint();
+    void drawSpeedProfile();
 
   public:
     VelocityControl *ptrVelocityControl;

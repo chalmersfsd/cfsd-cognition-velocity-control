@@ -7,45 +7,35 @@ Viewer::~Viewer() {}
 void Viewer::run() 
 {
   // Create OpenGL window in single line
-  pangolin::CreateWindowAndBind("Main",640,480);
+  const uint16_t width = 1024;
+  const uint16_t height = 768;
+  pangolin::CreateWindowAndBind("Main",width,height);
   
   // 3D Mouse handler requires depth testing to be enabled
   glEnable(GL_DEPTH_TEST);
 
+  const int MENU_WIDTH = 180;
+
+  // Create panel at left side of window
+  pangolin::CreatePanel("menu")
+      .SetBounds(0.0, 1.0, 0.0, pangolin::Attach::Pix(MENU_WIDTH));
+
+  // Menu variables
+  pangolin::Var<bool> menuShowPath("menu.ShowPath", true, true);
+  pangolin::Var<bool> menuShowAimPoint("menu.ShowAimPoint", true, true);
+  pangolin::Var<bool> menuShowSpeedProfile("menu.ShowSpeedProfile", true, true);
+  pangolin::Var<bool> menuExit("menu.Exit", false, false);
+
   // Define Camera Render Object (for view / scene browsing)
   pangolin::OpenGlRenderState s_cam(
-    pangolin::ProjectionMatrix(640,480,420,420,320,240,0.1,1000),
-    pangolin::ModelViewLookAt(-0,0.5,-3, 0,0,0, pangolin::AxisY)
+                pangolin::ProjectionMatrix(width,height,2000,2000,width/2,height/2,0.1,1000),
+                pangolin::ModelViewLookAt(0,-100,100, 0,0,0,1.0,0.0, 0.0)
   );
-
-  const int UI_WIDTH = 180;
 
   // Add named OpenGL viewport to window and provide 3D Handler
   pangolin::View& d_cam = pangolin::CreateDisplay()
-    .SetBounds(0.0, 1.0, pangolin::Attach::Pix(UI_WIDTH), 1.0, -640.0f/480.0f)
+    .SetBounds(0.0, 1.0, pangolin::Attach::Pix(MENU_WIDTH), 1.0, -float(width)/float(height))
     .SetHandler(new pangolin::Handler3D(s_cam));
-
-  // Add named Panel and bind to variables beginning 'ui'
-  // A Panel is just a View with a default layout and input handling
-  pangolin::CreatePanel("ui")
-      .SetBounds(0.0, 1.0, 0.0, pangolin::Attach::Pix(UI_WIDTH));
-
-  // Safe and efficient binding of named variables.
-  // Specialisations mean no conversions take place for exact types
-  // and conversions between scalar types are cheap.
-  pangolin::Var<bool> a_button("ui.A_Button",false,false);
-  pangolin::Var<double> a_double("ui.A_Double",3,0,5);
-  pangolin::Var<int> an_int("ui.An_Int",2,0,5);
-  pangolin::Var<double> a_double_log("ui.Log_scale var",3,1,1E4, true);
-  pangolin::Var<bool> a_checkbox("ui.A_Checkbox",false,true);
-  pangolin::Var<int> an_int_no_input("ui.An_Int_No_Input",2);
-
-  pangolin::Var<bool> save_window("ui.Save_Window",false,false);
-  pangolin::Var<bool> save_cube("ui.Save_Cube",false,false);
-
-
-  // Demonstration of how we can register a keyboard hook to alter a Var
-  pangolin::RegisterKeyPressCallback(pangolin::PANGO_CTRL + 'b', pangolin::SetVarFunctor<double>("ui.A_Double", 3.5));
 
   while (!pangolin::ShouldQuit())
   {
@@ -66,32 +56,106 @@ void Viewer::run()
     // Clear entire screen
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);    
 
-    if( pangolin::Pushed(a_button) )
-      std::cout << "You Pushed a button!" << std::endl;
-
-    // Overloading of Var<T> operators allows us to treat them like
-    // their wrapped types, eg:
-    if( a_checkbox )
-      an_int = (int)a_double;
-
-    an_int_no_input = an_int;
-
-    if( pangolin::Pushed(save_window) )
-        pangolin::SaveWindowOnRender("window");
-
-    if( pangolin::Pushed(save_cube) )
-        d_cam.SaveOnRender("cube");
-
     // Activate efficiently by object
     d_cam.Activate(s_cam);
+    glClearColor(0.0f,0.0f,0.0f,1.0f);
 
-    // Render some stuff
-    glColor3f(1.0,1.0,1.0);
-    pangolin::glDrawColouredCube();
+    if (menuShowPath)
+      drawPath();
+
+    if (menuShowAimPoint)
+      drawAimPoint();
+    
+    if (menuShowSpeedProfile)
+      drawSpeedProfile();
 
     // Swap frames and Process Events
     pangolin::FinishFrame();
+
+    if(menuExit)
+      break;
   }
+}
+
+// ########################## DRAW FUNCTIONS ###################################
+
+void Viewer::drawPath()
+{
+   // Safely copy path from velocity control
+  Eigen::MatrixXf path;
+  {
+    std::lock_guard<std::mutex> lock(ptrVelocityControl->m_pathMutex);
+    path = ptrVelocityControl->m_path;
+  }
+  if (path.rows() == 0) {
+    return;
+  }
+
+  glColor3f(1.0f, 1.0f, 1.0f);
+  glPointSize(2);
+
+  glBegin(GL_POINTS);
+
+  int length = path.rows();
+  for (int i = 0; i < length; i++){
+    glVertex2f(path(i,0), path(i,1));
+  }
+  glEnd();
+
+  glLineWidth(3);
+  glBegin(GL_LINES);
+  glVertex2f(path(0,0), path(0,0));
+  for (int i = 0; i < length; i++) {
+    glVertex2f(path(i,0), path(i,0));
+    glVertex2f(path(i,0), path(i,0));
+  }
+  glVertex2f(path(length-1,0), path(length-1,1));
+  glEnd();
+}
+
+void Viewer::drawAimPoint()
+{
+
+  // Safely copy aim point from velocity control
+  opendlv::logic::action::AimPoint aimPoint;
+  {
+    std::lock_guard<std::mutex> lock(ptrVelocityControl->m_aimPointMutex);
+    aimPoint = ptrVelocityControl->m_aimPoint;
+  }
+  float x = aimPoint.distance() * std::cos(aimPoint.azimuthAngle());
+  float y = aimPoint.distance() * std::sin(aimPoint.azimuthAngle());
+
+  glColor3f(1.0f, 0.0f, 0.0f);
+  glPointSize(5);
+
+  glBegin(GL_POINTS);
+    glVertex2f(x, y);
+  glEnd();
+}
+
+void Viewer::drawSpeedProfile()
+{
+  opendlv::logic::action::AimPoint aimPoint;
+  {
+    std::lock_guard<std::mutex> lock(ptrVelocityControl->m_aimPointMutex);
+    aimPoint = ptrVelocityControl->m_aimPoint;
+  }
+
+  // Change text color to white
+  glColor3f(1.0f, 1.0f, 1.0f);
+
+  // Issue specific OpenGl we might need
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+  float x = aimPoint.distance() * std::cos(aimPoint.azimuthAngle());
+  float y = aimPoint.distance() * std::sin(aimPoint.azimuthAngle());
+
+  pangolin::GlFont::I().Text(
+        "(%.2f, %.2f)",
+        aimPoint.distance(), aimPoint.azimuthAngle()
+  ).DrawWindow(1024.0f/2.0f, 768.0f/2.0f);
+  glDisable(GL_BLEND);
 }
 
 #endif

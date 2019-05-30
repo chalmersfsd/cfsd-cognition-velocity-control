@@ -2,7 +2,7 @@ version: '2'
 
 services:
     cfsd-cognition-velocity:
-        image: chalmersfsd/cfsd-cognition-velocity-planner:<tag>
+        image: chalmersfsd/cfsd-cognition-velocity-planner:test
         environment:
         - DISPLAY=$DISPLAY
         volumes:
