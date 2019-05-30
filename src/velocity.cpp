@@ -113,6 +113,7 @@ int32_t main(int32_t argc, char **argv) {
     #ifdef USE_VIEWER
     // Run a separate thread for visualization
     std::shared_ptr<Viewer> _pViewer = std::make_shared<Viewer>();
+    _pViewer->ptrVelocityControl = &velocityControl;
     std::thread _viewerThread = std::thread(&Viewer::run, _pViewer); // no need to detach, since there is a while loop in Viewer::run()
     #endif
 

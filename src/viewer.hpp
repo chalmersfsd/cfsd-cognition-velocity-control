@@ -4,8 +4,12 @@
 #define VIEWER_H
 
 #include <pangolin/pangolin.h>
+#include <Eigen/Core>
 #include <thread>
 #include <chrono>
+#include <mutex>
+
+#include "logic-velocity.hpp"
 
 class Viewer {
 
@@ -16,9 +20,8 @@ class Viewer {
   public:
     void run();
 
-  private:
-    void setUp();
-    void tearDown();
+  public:
+    VelocityControl *ptrVelocityControl;
 
 };
 

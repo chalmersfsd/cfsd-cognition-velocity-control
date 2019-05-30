@@ -26,7 +26,6 @@
 
 #include "opendlv-standard-message-set.hpp"
 
-
 class VelocityControl {
   public:
     VelocityControl(bool useConstantSpeed, float ayLimit, float velocityLimit, float decelerationLimit);
@@ -50,7 +49,7 @@ class VelocityControl {
     vcptr calculateSpeed;
 
 
-  private:
+  public:
     opendlv::logic::action::AimPoint m_aimPoint;
     Eigen::MatrixXf m_path;
     float m_speedRequest;
@@ -62,8 +61,6 @@ class VelocityControl {
 
     std::mutex m_pathMutex;
     std::mutex m_aimPointMutex;
-
-    
 };
 #endif
 
