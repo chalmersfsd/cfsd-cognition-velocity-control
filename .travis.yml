@@ -3,9 +3,8 @@ language: cpp
 sudo: required
 branches:
   only:
-  - "/^master$/"
-  - "/^pre-release$/"
-  - "/^v.*$/"
+  - "/^test.*$/"
+  - "/^v[0-9].*$/"
 services:
 - docker
 addons:
@@ -13,21 +12,19 @@ addons:
     update: true
 env:
   global:
-  - BRANCH=${TRAVIS_BRANCH}
-  - TAG=${TRAVIS_TAG}
   - DOCKERHUB='chalmersfsd'
   - IMAGE=`echo ${TRAVIS_REPO_SLUG#*/}`
+  - secure: phGtTZAS60B22tVTo0qXD3emaqxNnsY3MTB6R2CahRp3aeJWRTk3QsPMx5fX/pa0+NYk9xGdKHMpRwk+NNtovzqTLJSNzokaR4X2tooF9nNuikXtI/eHirmfKRjnyIBhtWTDwJLp6kgP8ZWW9eQaqqqfMjhcKo0i566zUVzlsK0f+/5waQ7mM5wwKqxy9eb09wY2yyvQOv+wd726bWXXZYvV/jGK834cKz+w0zTBhijOd86yoEIhlEgXvyffU8oiXsKliKfAegAoPAGZEYkYA7fWctXEE5D5gHYG4FvkL0h0LSovN+WSj+MsMHFkgtFt5YCoWVt1wLQk3Ouiu+sT/IyQzvIbnjJdU9pfb1itdITptxL+XTFGF34mDzLNFl1R+QJT2E5/KFZI+mnWWLErbJIgrwg8ouqr3sG+K9X9nPsN5NfzVu731E30syp5pCxfsBSfyApnPQOekjw5QgSqK1g/Dki9+RSR3NRN7jDuzhZA/1GU/EKlL1siZsoCCsXGqC9pc5PCDmzhlDIPe9IxRUJapHYP7bvL5ei5rr1acMnT3+z32Bsco3+WvtI+0A1Ey0GQRwJyxl25kcX9HAaqB9I6Z1LjMLGtoJAZqWablRNuWGt5Pfj+H8Sh5hSgROLWwlv8s0hrMNOB4k2awSC/WCBR/B5DKDXh0EjzCzK2p2s=
+  - secure: G6nK5j5Dl/d8TqImDg2Rchl0tcNu5W6jKvi1qAV7z3FCwO4TxDKXnsX1B7DAu8DublswQ7kzddXL7PwqTVlMzvVXxj/2prg1pj/DEKnqfesS9YHPI0IT2bcCHKpntsnWwiSv3y8dE3VNvVALnnccYABSix+DYQBKOcoWGyYFjKy423Qnz8BcXkGqK4NlI7a9I7egbQonIWiWe6eKNyGnji6b17FPnb0a9+vyR7NyU7bJ45p/8oLL0eZqpKwIEsbbQgop7Hb8vEG6ca72cRQywuMaLnjQ+R5QHNsNTEotlGKfa9BnjrUQNawOuAF+1zsG0g39beCOy9Ab1NJlij9q6BJ9m3cg/MozUZAO08kul48QwdNMGHC13Hh5N+Usb57jKH3ku7y9WoAVxkyRbExARelVQdrSgMzwZ857paPaiXOrzPaUI6mus5fMyeMt8DDgAsowcFD8P/lBwwV/GVFrcxHv9WJoGPwhoBIlIVtTx18OIcmsmnYcvBQFwp3A9kpSRdRr3ekIHCtmH4DWjcnd0zmcWCRYKYVzsqWBhvi7VMdWHkxP6qxBHT0ckOXeceaduQHl6LApvadh0V8+P9qYcjGo7ZOroxX4Vem7nEEVdjMSsnLtnQUejdH8zJmsCa6ZPOlfqFDTF/i/fS6uC5dg5d7EhhST2s8WOjwU/xwoaOo=
 install:
-- docker build -f Dockerfile.amd64 -t ${IMAGE}:${BRANCH} .
+- docker build -f Dockerfile.amd64 -t ${IMAGE} .
 script: skip
 after_success:
-- if [[ -z "${TAG}" ]]; then echo "This commit hasn't been tagged, will not be pushed
-  to dockerhub"; exit 0; fi
-- docker --version
 - echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-- docker tag ${IMAGE}:${BRANCH} ${DOCKERHUB}/${IMAGE}:${TAG}
-- docker push ${DOCKERHUB}/${IMAGE}:${TAG}
-- echo "${DOCKERHUB}/${IMAGE}:${TAG}"
+- if [[ "${TRAVIS_BRANCH}" == *test* ]]; then docker tag ${IMAGE} ${DOCKERHUB}/${IMAGE}:${TRAVIS_BRANCH}${TRAVIS_BUILD_NUMBER};
+  docker push ${DOCKERHUB}/${IMAGE}:${TRAVIS_BRANCH}${TRAVIS_BUILD_NUMBER}; echo "${DOCKERHUB}/${IMAGE}:${TRAVIS_BRANCH}${TRAVIS_BUILD_NUMBER}";
+  else docker tag ${IMAGE} ${DOCKERHUB}/${IMAGE}:${TRAVIS_BRANCH}; docker push ${DOCKERHUB}/${IMAGE}:${TRAVIS_BRANCH};
+  echo "${DOCKERHUB}/${IMAGE}:${TRAVIS_BRANCH}"; fi
 notifications:
   email:
     on_success: never
