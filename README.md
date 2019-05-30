@@ -9,3 +9,4 @@ See included docker-compose file.
 
 ### Dependencies
  - Eigen
+ - Pangolin

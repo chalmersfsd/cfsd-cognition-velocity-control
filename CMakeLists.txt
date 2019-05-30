@@ -96,7 +96,7 @@ set(LIBRARIES ${LIBRARIES} Eigen3::Eigen) # maybe unnecessary since Eigen is hea
 
 ################################################################################
 # Pangolin
-option(WITH_VIEWER "Enable visulization" ON)
+option(WITH_VIEWER "Enable visulization" OFF)
 if (WITH_VIEWER)
     add_definitions(-DUSE_VIEWER)
     find_package(Pangolin 0.4 REQUIRED)
