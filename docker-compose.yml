@@ -2,11 +2,16 @@ version: '2'
 
 services:
     cfsd-cognition-velocity:
-        image: testcontainer:latest
+        image: chalmersfsd/cfsd-cognition-velocity-planner:<tag>
+        environment:
+        - DISPLAY=$DISPLAY
+        volumes:
+        - /tmp/.X11-unix:/tmp/.X11-unix 
         network_mode: "host"
         command: "velocity --cid=219 --ayLimit=5.0 --velocityLimit=10.0 --decelerationLimit=5.0"
 
-    cfsd-logic-pathplanner:
-        image: chalmersfsd/cfsd-logic-pathplanner:v0.0.1
-        network_mode: "host"
-        command: "cfsd-logic-pathplanner --cid=219 --freq=1"
+# docker run --rm -ti --net=host \
+#                -e DISPLAY=$DISPLAY \
+#                -v /tmp/.X11-unix:/tmp/.X11-unix \
+#                chalmersfsd/cfsd-cognition-velocity-planner:<tag> /usr/bin/velocity \
+#                    --cid=219 --ayLimit=5.0 --velocityLimit=10.0 --decelerationLimit=5.0 --verbose
