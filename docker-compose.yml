@@ -8,7 +8,7 @@ services:
         volumes:
         - /tmp/.X11-unix:/tmp/.X11-unix 
         network_mode: "host"
-        command: "velocity --cid=219 --ayLimit=5.0 --velocityLimit=10.0 --decelerationLimit=5.0"
+        command: "velocity --cid=253 --ayLimit=5.0 --velocityLimit=10.0 --decelerationLimit=5.0"
 
 # docker run --rm -ti --net=host \
 #                -e DISPLAY=$DISPLAY \

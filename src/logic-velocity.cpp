@@ -22,6 +22,7 @@ VelocityControl::VelocityControl(bool useConstantSpeed, float ayLimit, float vel
   : calculateSpeed{NULL}
   , m_aimPoint{}
   , m_path{}
+  , m_speedProfile{}
   , m_speedRequest{0.0f}
   , m_useConstantSpeed{useConstantSpeed}
   , m_ayLimit{ayLimit}
@@ -30,6 +31,7 @@ VelocityControl::VelocityControl(bool useConstantSpeed, float ayLimit, float vel
 
   , m_pathMutex{}
   , m_aimPointMutex{}
+  , m_speedProfileMutex{}
 {
   setUp();
 }
@@ -138,6 +140,9 @@ float VelocityControl::dynamicSpeed()
     }
   }
 
+  // Store speed profile for viewer
+  setSpeedProfile(speedProfile);
+
   // Return second point in path
   m_speedRequest = speedProfile[1] * (1 + std::abs(aimAngle));
   return m_speedRequest;
@@ -164,4 +169,10 @@ void VelocityControl::setAimPoint(opendlv::logic::action::AimPoint aimPoint)
 {
   std::lock_guard<std::mutex> lock(m_aimPointMutex);
   m_aimPoint = aimPoint;
+}
+
+void VelocityControl::setSpeedProfile(Eigen::MatrixXf speedProfile)
+{
+  std::lock_guard<std::mutex> lock(m_speedProfileMutex);
+  m_speedProfile = speedProfile;
 }

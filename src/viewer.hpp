@@ -9,6 +9,7 @@
 #include <chrono>
 #include <mutex>
 #include <cmath>
+#include <cstdio>
 
 #include "logic-velocity.hpp"
 

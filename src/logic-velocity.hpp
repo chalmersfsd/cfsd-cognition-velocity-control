@@ -36,6 +36,7 @@ class VelocityControl {
 
     void setPath(Eigen::MatrixXf path);
     void setAimPoint(opendlv::logic::action::AimPoint aimPoint);
+    void setSpeedProfile(Eigen::MatrixXf speedProfile);
 
   private:
     void setUp();
@@ -52,6 +53,7 @@ class VelocityControl {
   public:
     opendlv::logic::action::AimPoint m_aimPoint;
     Eigen::MatrixXf m_path;
+    Eigen::MatrixXf m_speedProfile;
     float m_speedRequest;
 
     bool m_useConstantSpeed;
@@ -61,6 +63,7 @@ class VelocityControl {
 
     std::mutex m_pathMutex;
     std::mutex m_aimPointMutex;
+    std::mutex m_speedProfileMutex;
 };
 #endif
 

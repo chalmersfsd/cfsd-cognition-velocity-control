@@ -29,7 +29,7 @@ void Viewer::run()
   // Define Camera Render Object (for view / scene browsing)
   pangolin::OpenGlRenderState s_cam(
                 pangolin::ProjectionMatrix(width,height,2000,2000,width/2,height/2,0.1,1000),
-                pangolin::ModelViewLookAt(0,-100,100, 0,0,0,1.0,0.0, 0.0)
+                pangolin::ModelViewLookAt(0,-10,10, 0,0,0,1.0,0.0, 0.0)
   );
 
   // Add named OpenGL viewport to window and provide 3D Handler
@@ -92,7 +92,7 @@ void Viewer::drawPath()
   }
 
   glColor3f(1.0f, 1.0f, 1.0f);
-  glPointSize(2);
+  glPointSize(4);
 
   glBegin(GL_POINTS);
 
@@ -102,6 +102,7 @@ void Viewer::drawPath()
   }
   glEnd();
 
+  /*
   glLineWidth(3);
   glBegin(GL_LINES);
   glVertex2f(path(0,0), path(0,0));
@@ -111,6 +112,7 @@ void Viewer::drawPath()
   }
   glVertex2f(path(length-1,0), path(length-1,1));
   glEnd();
+  */
 }
 
 void Viewer::drawAimPoint()
@@ -126,7 +128,7 @@ void Viewer::drawAimPoint()
   float y = aimPoint.distance() * std::sin(aimPoint.azimuthAngle());
 
   glColor3f(1.0f, 0.0f, 0.0f);
-  glPointSize(5);
+  glPointSize(7);
 
   glBegin(GL_POINTS);
     glVertex2f(x, y);
@@ -135,12 +137,18 @@ void Viewer::drawAimPoint()
 
 void Viewer::drawSpeedProfile()
 {
-  opendlv::logic::action::AimPoint aimPoint;
+  Eigen::MatrixXf speedProfile;
+  Eigen::MatrixXf path;
   {
-    std::lock_guard<std::mutex> lock(ptrVelocityControl->m_aimPointMutex);
-    aimPoint = ptrVelocityControl->m_aimPoint;
-  }
+    std::lock_guard<std::mutex> lock1(ptrVelocityControl->m_speedProfileMutex);
+    std::lock_guard<std::mutex> lock2(ptrVelocityControl->m_pathMutex);
 
+    speedProfile = ptrVelocityControl->m_speedProfile;
+    path = ptrVelocityControl->m_path;
+  }
+  if (speedProfile.rows() == 0) {
+    return;
+  }
   // Change text color to white
   glColor3f(1.0f, 1.0f, 1.0f);
 
@@ -148,13 +156,14 @@ void Viewer::drawSpeedProfile()
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-  float x = aimPoint.distance() * std::cos(aimPoint.azimuthAngle());
-  float y = aimPoint.distance() * std::sin(aimPoint.azimuthAngle());
+  // Print speed values at path points
+  for (int i = 0; i < speedProfile.rows(); i++) {
+    std::ostringstream strStream;
+    strStream.precision(2);
+    strStream << std::fixed << speedProfile(i);
+    pangolin::GlFont::I().Text(strStream.str().c_str()).Draw(path(i,0) * 1.2f, path(i,1) * 1.2f, 0.0f);
+  }
 
-  pangolin::GlFont::I().Text(
-        "(%.2f, %.2f)",
-        aimPoint.distance(), aimPoint.azimuthAngle()
-  ).DrawWindow(1024.0f/2.0f, 768.0f/2.0f);
   glDisable(GL_BLEND);
 }
 
