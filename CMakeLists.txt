@@ -44,7 +44,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \
     -fstack-protector \
     -fomit-frame-pointer \
     -pipe")
-#\
+# These had to be removed to be able to compile with pangolin
 #-pedantic -pedantic-errors \
 #-Werror \
 #-Weffc++ \
