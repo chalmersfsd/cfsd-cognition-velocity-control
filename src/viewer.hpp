@@ -23,9 +23,9 @@ class Viewer {
     void run();
 
   private:
-    void drawPath();
-    void drawAimPoint();
-    void drawSpeedProfile();
+    void drawPath(const Eigen::MatrixXf &path);
+    void drawAimPoint(const opendlv::logic::action::AimPoint &aimPoint);
+    void drawSpeedProfile(const Eigen::MatrixXf &speedProfile, const Eigen::MatrixXf &path);
     void drawCar();
 
   public:

@@ -55,14 +55,28 @@ void Viewer::run()
     d_cam.Activate(s_cam);
     glClearColor(0.0f,0.0f,0.0f,1.0f);
 
+    // Safely copy from velocity Control
+    Eigen::MatrixXf path;
+    Eigen::MatrixXf speedProfile;
+    opendlv::logic::action::AimPoint aimPoint;
+    {
+      std::lock_guard<std::mutex> lock1(ptrVelocityControl->m_pathMutex);
+      std::lock_guard<std::mutex> lock2(ptrVelocityControl->m_speedProfileMutex);
+      std::lock_guard<std::mutex> lock3(ptrVelocityControl->m_aimPointMutex);
+
+      path = ptrVelocityControl->m_path;
+      speedProfile = ptrVelocityControl->m_speedProfile;
+      aimPoint = ptrVelocityControl->m_aimPoint;
+    }  
+
     if (menuShowPath)
-      drawPath();
+      drawPath(path);
 
     if (menuShowAimPoint)
-      drawAimPoint();
+      drawAimPoint(aimPoint);
     
     if (menuShowSpeedProfile)
-      drawSpeedProfile();
+      drawSpeedProfile(speedProfile, path);
     
     if (menuShowCar)
       drawCar();
@@ -77,31 +91,24 @@ void Viewer::run()
 
 // ########################## DRAW FUNCTIONS ###################################
 
-void Viewer::drawPath()
+void Viewer::drawPath(const Eigen::MatrixXf &path)
 {
-   // Safely copy path from velocity control
-  Eigen::MatrixXf path;
-  {
-    std::lock_guard<std::mutex> lock(ptrVelocityControl->m_pathMutex);
-    path = ptrVelocityControl->m_path;
-  }
   if (path.rows() == 0) {
     return;
   }
 
   glColor3f(1.0f, 1.0f, 1.0f);
-  
   glPointSize(6);
 
+  // Draw discrete path points
   glBegin(GL_POINTS);
-
   int length = path.rows();
   for (int i = 0; i < length; i++){
     glVertex2f(path(i,0), path(i,1));
   }
   glEnd();
 
-  
+  // Fill in path line between points
   glLineWidth(3);
   glBegin(GL_LINE_STRIP);
   for (int i = 0; i < length; i++) {
@@ -111,15 +118,8 @@ void Viewer::drawPath()
   
 }
 
-void Viewer::drawAimPoint()
+void Viewer::drawAimPoint(const opendlv::logic::action::AimPoint &aimPoint)
 {
-
-  // Safely copy aim point from velocity control
-  opendlv::logic::action::AimPoint aimPoint;
-  {
-    std::lock_guard<std::mutex> lock(ptrVelocityControl->m_aimPointMutex);
-    aimPoint = ptrVelocityControl->m_aimPoint;
-  }
   float x = aimPoint.distance() * std::cos(aimPoint.azimuthAngle());
   float y = aimPoint.distance() * std::sin(aimPoint.azimuthAngle());
 
@@ -131,21 +131,12 @@ void Viewer::drawAimPoint()
   glEnd();
 }
 
-void Viewer::drawSpeedProfile()
+void Viewer::drawSpeedProfile(const Eigen::MatrixXf &speedProfile, const Eigen::MatrixXf &path)
 {
-  Eigen::MatrixXf speedProfile;
-  Eigen::MatrixXf path;
-  {
-    std::lock_guard<std::mutex> lock1(ptrVelocityControl->m_speedProfileMutex);
-    std::lock_guard<std::mutex> lock2(ptrVelocityControl->m_pathMutex);
-
-    speedProfile = ptrVelocityControl->m_speedProfile;
-    path = ptrVelocityControl->m_path;
-  }
   if (speedProfile.rows() == 0) {
     return;
   }
-  // Change text color to white
+  
   glColor3f(1.0f, 1.0f, 1.0f);
 
   // Issue specific OpenGl we might need
@@ -175,6 +166,7 @@ void Viewer::drawSpeedProfile()
 
 void Viewer::drawCar()
 {
+  // Specify two corners of a rectangle
   glColor3f(0.0f, 0.0f, 1.0f);
 
   const float carLength = 0.3f;
