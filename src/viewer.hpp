@@ -26,6 +26,7 @@ class Viewer {
     void drawPath();
     void drawAimPoint();
     void drawSpeedProfile();
+    void drawCar();
 
   public:
     VelocityControl *ptrVelocityControl;

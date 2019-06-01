@@ -24,12 +24,17 @@ void Viewer::run()
   pangolin::Var<bool> menuShowPath("menu.ShowPath", true, true);
   pangolin::Var<bool> menuShowAimPoint("menu.ShowAimPoint", true, true);
   pangolin::Var<bool> menuShowSpeedProfile("menu.ShowSpeedProfile", true, true);
+  pangolin::Var<bool> menuShowCar("menu.ShowCar", true, true);
   pangolin::Var<bool> menuExit("menu.Exit", false, false);
 
+  const int cameraPosZ = 30;
+  const int offsetY = 3;
+
   // Define Camera Render Object (for view / scene browsing)
+  // y-axis up
   pangolin::OpenGlRenderState s_cam(
                 pangolin::ProjectionMatrix(width,height,2000,2000,width/2,height/2,0.1,1000),
-                pangolin::ModelViewLookAt(0,-10,10, 0,0,0,1.0,0.0, 0.0)
+                pangolin::ModelViewLookAt(0,0,cameraPosZ, 0,offsetY,0, pangolin::AxisY)
   );
 
   // Add named OpenGL viewport to window and provide 3D Handler
@@ -41,17 +46,7 @@ void Viewer::run()
   {
     // Limit thread update
     using namespace std::chrono_literals;
-    std::this_thread::sleep_for(30ms);
-    
-    Eigen::MatrixXf path;
-    opendlv::logic::action::AimPoint aimPoint;
-    {
-      std::lock_guard<std::mutex> lock1(ptrVelocityControl->m_pathMutex);
-      std::lock_guard<std::mutex> lock2(ptrVelocityControl->m_aimPointMutex);
-
-      path = ptrVelocityControl->m_path;
-      aimPoint = ptrVelocityControl->m_aimPoint;
-    }
+    std::this_thread::sleep_for(100ms);
 
     // Clear entire screen
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);    
@@ -68,6 +63,9 @@ void Viewer::run()
     
     if (menuShowSpeedProfile)
       drawSpeedProfile();
+    
+    if (menuShowCar)
+      drawCar();
 
     // Swap frames and Process Events
     pangolin::FinishFrame();
@@ -92,7 +90,8 @@ void Viewer::drawPath()
   }
 
   glColor3f(1.0f, 1.0f, 1.0f);
-  glPointSize(4);
+  
+  glPointSize(6);
 
   glBegin(GL_POINTS);
 
@@ -102,17 +101,14 @@ void Viewer::drawPath()
   }
   glEnd();
 
-  /*
+  
   glLineWidth(3);
-  glBegin(GL_LINES);
-  glVertex2f(path(0,0), path(0,0));
+  glBegin(GL_LINE_STRIP);
   for (int i = 0; i < length; i++) {
-    glVertex2f(path(i,0), path(i,0));
-    glVertex2f(path(i,0), path(i,0));
+    glVertex2f(path(i,0), path(i,1));
   }
-  glVertex2f(path(length-1,0), path(length-1,1));
   glEnd();
-  */
+  
 }
 
 void Viewer::drawAimPoint()
@@ -128,10 +124,10 @@ void Viewer::drawAimPoint()
   float y = aimPoint.distance() * std::sin(aimPoint.azimuthAngle());
 
   glColor3f(1.0f, 0.0f, 0.0f);
-  glPointSize(7);
+  glPointSize(9);
 
   glBegin(GL_POINTS);
-    glVertex2f(x, y);
+  glVertex2f(x, y);
   glEnd();
 }
 
@@ -156,15 +152,38 @@ void Viewer::drawSpeedProfile()
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+  // Offset text to left/right depending on turn direction
+  const bool leftTurn = path.col(0).sum() < 0.0f;
+  float textOffsetX = -0.8f;
+  float textOffsetY = 0.1f;
+  if (leftTurn) {
+    textOffsetX = 0.3f;
+  }
+
   // Print speed values at path points
   for (int i = 0; i < speedProfile.rows(); i++) {
     std::ostringstream strStream;
     strStream.precision(2);
     strStream << std::fixed << speedProfile(i);
-    pangolin::GlFont::I().Text(strStream.str().c_str()).Draw(path(i,0) * 1.2f, path(i,1) * 1.2f, 0.0f);
+    pangolin::GlFont::I()
+      .Text(strStream.str().c_str())
+      .Draw(path(i,0) + textOffsetX, path(i,1) + textOffsetY, 0.0f);
   }
 
   glDisable(GL_BLEND);
+}
+
+void Viewer::drawCar()
+{
+  glColor3f(0.0f, 0.0f, 1.0f);
+
+  const float carLength = 0.3f;
+  const float x1 = -carLength * 0.5f;
+  const float y1 = carLength;
+  const float x2 = -x1;
+  const float y2 = -y1;
+
+  glRectf(x1, y1, x2, y2);
 }
 
 #endif
