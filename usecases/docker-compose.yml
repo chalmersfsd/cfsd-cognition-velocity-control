@@ -1,0 +1,7 @@
+version: '2'
+
+services:
+    cfsd-cognition-velocity:
+        image: chalmersfsd/cfsd-cognition-velocity-planner:test
+        network_mode: "host"
+        command: "velocity --cid=253 --ayLimit=5.0 --velocityLimit=10.0 --decelerationLimit=5.0"
