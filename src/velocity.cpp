@@ -101,7 +101,7 @@ int32_t main(int32_t argc, char **argv) {
             od4.send(speedRequest, sampleTime, 2201);
           
             if (VERBOSE) {
-              std::cout << "Ground speed request: " << speedRequest.groundSpeed() << std::endl; 
+              std::cout << "[COGNITION-VELOCITY] Ground speed request: " << speedRequest.groundSpeed() << std::endl; 
             }
           }
 
